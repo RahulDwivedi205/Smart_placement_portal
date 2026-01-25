@@ -40,14 +40,14 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+      <div className="glass-card bg-red-500 bg-opacity-20 border-red-300 text-red-100 px-4 py-3 rounded-xl">
         {error}
       </div>
     );
@@ -101,225 +101,222 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Admin Dashboard
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Monitor and manage the entire placement ecosystem
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 p-6">
+      <div className="space-y-6">
+        <div className="glass-card p-8">
+          <div className="flex items-center space-x-4 mb-2">
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full flex items-center justify-center">
+              <ChartBarIcon className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                Admin Dashboard
+              </h1>
+              <p className="text-blue-100 mt-1">
+                Monitor and manage the entire placement ecosystem
+              </p>
+            </div>
+          </div>
+        </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {statCards.map((stat, index) => (
-          <Link
-            key={index}
-            to={stat.link}
-            className="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow"
-          >
-            <div className="p-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {statCards.map((stat, index) => (
+            <Link
+              key={index}
+              to={stat.link}
+              className="glass-card p-6 hover:bg-white hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105 group"
+            >
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className={`${stat.color} rounded-md p-3`}>
+                  <div className={`${stat.color} rounded-xl p-3 group-hover:scale-110 transition-transform duration-300`}>
                     <stat.icon className="h-6 w-6 text-white" />
                   </div>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
+                    <dt className="text-sm font-medium text-blue-100 truncate">
                       {stat.title}
                     </dt>
-                    <dd className="text-lg font-medium text-gray-900">
+                    <dd className="text-2xl font-bold text-white">
                       {stat.value}
                     </dd>
                   </dl>
                 </div>
               </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Placement Trends */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Monthly Application Trends
-          </h2>
-          <PlacementChart data={analytics.monthlyTrends} />
+            </Link>
+          ))}
         </div>
 
-        {/* Branch-wise Placement */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Branch-wise Placement Rate
-          </h2>
-          <BranchWiseChart data={analytics.branchStats} />
-        </div>
-      </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="glass-card p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">
+              Monthly Application Trends
+            </h2>
+            <PlacementChart data={analytics.monthlyTrends} />
+          </div>
 
-      {/* Top Companies */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">
-            Top Hiring Companies
-          </h2>
-        </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            {analytics.companyStats.slice(0, 8).map((company, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className="bg-blue-100 rounded-full p-2">
-                    <BuildingOfficeIcon className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-gray-900">
-                      {company.companyName}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {company.totalJobs} jobs • {company.totalApplications} applications
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-semibold text-green-600">
-                    {company.hired}
-                  </div>
-                  <div className="text-sm text-gray-500">hired</div>
-                </div>
-              </div>
-            ))}
+          <div className="glass-card p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">
+              Branch-wise Placement Rate
+            </h2>
+            <BranchWiseChart data={analytics.branchStats} />
           </div>
         </div>
-      </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Applications */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
-              Recent Applications
+        <div className="glass-card">
+          <div className="px-6 py-4 border-b border-white border-opacity-20">
+            <h2 className="text-xl font-semibold text-white">
+              Top Hiring Companies
             </h2>
           </div>
-          <div className="divide-y divide-gray-200">
-            {recentActivity.applications.slice(0, 5).map((application) => (
-              <div key={application._id} className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900">
-                      {application.studentId?.personalInfo?.name || 'Student'}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      Applied for {application.jobId?.title}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(application.appliedAt).toLocaleDateString()}
-                    </p>
+          <div className="p-6">
+            <div className="space-y-4">
+              {analytics.companyStats.slice(0, 8).map((company, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-white bg-opacity-10 rounded-xl backdrop-blur-sm">
+                  <div className="flex items-center">
+                    <div className="bg-blue-400 bg-opacity-30 rounded-full p-2">
+                      <BuildingOfficeIcon className="h-5 w-5 text-blue-200" />
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-white">
+                        {company.companyName}
+                      </h3>
+                      <p className="text-sm text-blue-200">
+                        {company.totalJobs} jobs • {company.totalApplications} applications
+                      </p>
+                    </div>
                   </div>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    application.status === 'applied' 
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : application.status === 'interview_scheduled'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {application.status.replace('_', ' ').toUpperCase()}
-                  </span>
+                  <div className="text-right">
+                    <div className="text-lg font-semibold text-green-300">
+                      {company.hired}
+                    </div>
+                    <div className="text-sm text-blue-200">hired</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Recent Jobs */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
-              Recent Job Postings
-            </h2>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {recentActivity.jobs.slice(0, 5).map((job) => (
-              <div key={job._id} className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900">
-                      {job.jobDetails?.title}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {job.companyId?.companyInfo?.name}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Posted {new Date(job.createdAt).toLocaleDateString()}
-                    </p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="glass-card">
+            <div className="px-6 py-4 border-b border-white border-opacity-20">
+              <h2 className="text-xl font-semibold text-white">
+                Recent Applications
+              </h2>
+            </div>
+            <div className="divide-y divide-white divide-opacity-20">
+              {recentActivity.applications.slice(0, 5).map((application) => (
+                <div key={application._id} className="px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium text-white">
+                        {application.studentId?.personalInfo?.name || 'Student'}
+                      </h3>
+                      <p className="text-sm text-blue-200">
+                        Applied for {application.jobId?.title}
+                      </p>
+                      <p className="text-xs text-blue-300">
+                        {new Date(application.appliedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      application.status === 'applied' 
+                        ? 'bg-yellow-500 bg-opacity-20 text-yellow-200 border border-yellow-400'
+                        : application.status === 'interview_scheduled'
+                        ? 'bg-blue-500 bg-opacity-20 text-blue-200 border border-blue-400'
+                        : 'bg-gray-500 bg-opacity-20 text-gray-200 border border-gray-400'
+                    }`}>
+                      {application.status.replace('_', ' ').toUpperCase()}
+                    </span>
                   </div>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    job.status === 'active' 
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {job.status.toUpperCase()}
-                  </span>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          <div className="glass-card">
+            <div className="px-6 py-4 border-b border-white border-opacity-20">
+              <h2 className="text-xl font-semibold text-white">
+                Recent Job Postings
+              </h2>
+            </div>
+            <div className="divide-y divide-white divide-opacity-20">
+              {recentActivity.jobs.slice(0, 5).map((job) => (
+                <div key={job._id} className="px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium text-white">
+                        {job.jobDetails?.title}
+                      </h3>
+                      <p className="text-sm text-blue-200">
+                        {job.companyId?.companyInfo?.name}
+                      </p>
+                      <p className="text-xs text-blue-300">
+                        Posted {new Date(job.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      job.status === 'active' 
+                        ? 'bg-green-500 bg-opacity-20 text-green-200 border border-green-400'
+                        : 'bg-gray-500 bg-opacity-20 text-gray-200 border border-gray-400'
+                    }`}>
+                      {job.status.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Link
-            to="/admin/students"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <UserGroupIcon className="h-8 w-8 text-blue-500" />
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-gray-900">Manage Students</h3>
-              <p className="text-sm text-gray-500">View student profiles</p>
-            </div>
-          </Link>
-          
-          <Link
-            to="/admin/companies"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <BuildingOfficeIcon className="h-8 w-8 text-green-500" />
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-gray-900">Manage Companies</h3>
-              <p className="text-sm text-gray-500">Approve companies</p>
-            </div>
-          </Link>
-          
-          <Link
-            to="/admin/jobs"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <BriefcaseIcon className="h-8 w-8 text-purple-500" />
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-gray-900">Monitor Jobs</h3>
-              <p className="text-sm text-gray-500">Oversee job postings</p>
-            </div>
-          </Link>
-          
-          <Link
-            to="/admin/analytics"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <ChartBarIcon className="h-8 w-8 text-red-500" />
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-gray-900">View Analytics</h3>
-              <p className="text-sm text-gray-500">Detailed insights</p>
-            </div>
-          </Link>
+        <div className="glass-card p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Link
+              to="/admin/students"
+              className="flex items-center p-4 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+            >
+              <UserGroupIcon className="h-8 w-8 text-blue-300" />
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-white">Manage Students</h3>
+                <p className="text-sm text-blue-200">View student profiles</p>
+              </div>
+            </Link>
+            
+            <Link
+              to="/admin/companies"
+              className="flex items-center p-4 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+            >
+              <BuildingOfficeIcon className="h-8 w-8 text-green-300" />
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-white">Manage Companies</h3>
+                <p className="text-sm text-blue-200">Approve companies</p>
+              </div>
+            </Link>
+            
+            <Link
+              to="/admin/jobs"
+              className="flex items-center p-4 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+            >
+              <BriefcaseIcon className="h-8 w-8 text-purple-300" />
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-white">Monitor Jobs</h3>
+                <p className="text-sm text-blue-200">Oversee job postings</p>
+              </div>
+            </Link>
+            
+            <Link
+              to="/admin/analytics"
+              className="flex items-center p-4 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-xl hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+            >
+              <ChartBarIcon className="h-8 w-8 text-red-300" />
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-white">View Analytics</h3>
+                <p className="text-sm text-blue-200">Detailed insights</p>
+              </div>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

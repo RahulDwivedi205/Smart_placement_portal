@@ -13,6 +13,9 @@ import AdminDashboard from './pages/admin/Dashboard';
 import JobListings from './pages/student/JobListings';
 import Applications from './pages/student/Applications';
 import Profile from './pages/student/Profile';
+import AdminCompanies from './pages/admin/Companies';
+import AdminApplications from './pages/admin/Applications';
+import PlacementProcess from './pages/admin/PlacementProcess';
 
 function AppRoutes() {
   const { user, loading } = useAuth();
@@ -85,6 +88,30 @@ function AppRoutes() {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/companies" 
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminCompanies />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/applications" 
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminApplications />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/placement-process" 
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <PlacementProcess />
               </ProtectedRoute>
             } 
           />
