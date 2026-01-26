@@ -11,22 +11,25 @@ class StudentController {
     let student = await StudentProfile.findOne({ userId });
     
     if (!student) {
+      // Generate unique roll number using timestamp
+      const uniqueRollNumber = `TEMP${Date.now().toString().slice(-6)}`;
+      
       student = new StudentProfile({
         userId,
         personalInfo: {
           firstName: 'Student',
           lastName: 'User',
-          rollNumber: 'TEMP001',
+          rollNumber: uniqueRollNumber,
           branch: 'CSE',
           batch: 2024,
           phone: '0000000000',
           currentSemester: 1
         },
         academics: {
-          cgpa: 0,
+          cgpa: 8.0,
           backlogs: 0,
-          tenthMarks: 0,
-          twelfthMarks: 0
+          tenthMarks: 85.0,
+          twelfthMarks: 88.0
         },
         skills: {
           technical: [],
@@ -72,6 +75,21 @@ class StudentController {
   // Update student profile
   static async updateProfile(req, res) {
     try {
+      // Check if roll number is being updated and if it already exists
+      if (req.body.personalInfo?.rollNumber) {
+        const existingProfile = await StudentProfile.findOne({
+          'personalInfo.rollNumber': req.body.personalInfo.rollNumber,
+          userId: { $ne: req.user.id }
+        });
+        
+        if (existingProfile) {
+          return res.status(400).json({
+            success: false,
+            message: 'Roll number already exists. Please use a different roll number.'
+          });
+        }
+      }
+
       const profile = await StudentProfile.findOneAndUpdate(
         { userId: req.user.id },
         req.body,
@@ -92,10 +110,17 @@ class StudentController {
         data: profile
       });
     } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
+      if (error.code === 11000 && error.keyPattern?.['personalInfo.rollNumber']) {
+        res.status(400).json({
+          success: false,
+          message: 'Roll number already exists. Please use a different roll number.'
+        });
+      } else {
+        res.status(500).json({ 
+          success: false,
+          message: error.message 
+        });
+      }
     }
   }
 

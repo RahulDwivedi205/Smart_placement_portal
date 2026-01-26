@@ -213,7 +213,6 @@ class CompanyController {
             select: 'email'
           }
         })
-        .populate('interviewRounds')
         .sort({ appliedAt: -1 });
 
       res.json(applications);
@@ -264,7 +263,17 @@ class CompanyController {
       }
 
       application.status = status;
-      if (feedback) application.feedback = feedback;
+      
+      // Handle feedback properly - add to feedback array if provided
+      if (feedback) {
+        application.feedback.push({
+          round: application.currentRound || 1,
+          interviewer: 'HR',
+          comments: feedback,
+          date: new Date()
+        });
+      }
+      
       await application.save();
 
       res.json(application);
@@ -312,6 +321,44 @@ class CompanyController {
       res.status(201).json(interviewRound);
     } catch (error) {
       res.status(500).json({ message: error.message });
+    }
+  }
+
+  // Delete application (company can remove applications)
+  static async deleteApplication(req, res) {
+    try {
+      const { applicationId } = req.params;
+
+      const application = await Application.findById(applicationId)
+        .populate('jobId');
+
+      if (!application) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Application not found' 
+        });
+      }
+
+      // Verify job belongs to company
+      const company = await Company.findOne({ userId: req.user.id });
+      if (application.jobId.companyId.toString() !== company._id.toString()) {
+        return res.status(403).json({ 
+          success: false,
+          message: 'Unauthorized' 
+        });
+      }
+
+      await Application.findByIdAndDelete(applicationId);
+
+      res.json({
+        success: true,
+        message: 'Application deleted successfully'
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
     }
   }
 

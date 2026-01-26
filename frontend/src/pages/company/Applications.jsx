@@ -9,7 +9,8 @@ import {
   XCircleIcon,
   ClockIcon,
   CalendarIcon,
-  StarIcon
+  StarIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 
 const Applications = () => {
@@ -112,6 +113,33 @@ const Applications = () => {
     } catch (err) {
       console.error('Failed to update application status:', err);
       setError('Failed to update application status');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const deleteApplication = async (applicationId) => {
+    if (!window.confirm('Are you sure you want to delete this application? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      const response = await api.delete(`/company/applications/${applicationId}`);
+
+      if (response.data.success) {
+        // Remove the application from the list
+        setApplications(prev => prev.filter(app => app._id !== applicationId));
+        setShowModal(false);
+        setSelectedApplication(null);
+        
+        // Show success message
+        alert('Application deleted successfully');
+      }
+    } catch (err) {
+      console.error('Failed to delete application:', err);
+      setError('Failed to delete application');
+      alert('Failed to delete application. Please try again.');
     } finally {
       setActionLoading(false);
     }
@@ -314,6 +342,15 @@ const Applications = () => {
                         >
                           Review
                         </button>
+                        
+                        <button
+                          onClick={() => deleteApplication(application._id)}
+                          className="px-3 py-2 bg-red-500 bg-opacity-30 text-red-100 rounded-lg hover:bg-opacity-50 transition-all duration-200 flex items-center space-x-1"
+                          title="Delete Application"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                          <span>Delete</span>
+                        </button>
                       </div>
                     </div>
                     
@@ -447,6 +484,20 @@ const Applications = () => {
                     >
                       Reject
                     </button>
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t border-white border-opacity-20">
+                    <button
+                      onClick={() => deleteApplication(selectedApplication._id)}
+                      disabled={actionLoading}
+                      className="px-4 py-2 bg-red-600 bg-opacity-40 text-red-100 rounded-lg hover:bg-opacity-60 transition-all duration-200 disabled:opacity-50 font-medium flex items-center space-x-2"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                      <span>Delete Application</span>
+                    </button>
+                    <p className="text-red-200 text-xs mt-1">
+                      Warning: This action cannot be undone
+                    </p>
                   </div>
                 </div>
               </div>

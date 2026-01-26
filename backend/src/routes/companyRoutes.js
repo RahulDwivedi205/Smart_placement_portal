@@ -17,6 +17,7 @@ router.delete('/jobs/:jobId', CompanyController.deleteJob);
 router.get('/jobs/:jobId/applications', CompanyController.getJobApplications);
 router.get('/jobs/:jobId/eligible-students', CompanyController.getEligibleStudents);
 router.put('/applications/:applicationId/status', CompanyController.updateApplicationStatus);
+router.delete('/applications/:applicationId', CompanyController.deleteApplication);
 router.post('/applications/:applicationId/interview', CompanyController.scheduleInterview);
 router.get('/dashboard', CompanyController.getDashboardData);
 
