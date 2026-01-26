@@ -4,41 +4,51 @@ const Job = require('../models/Job');
 class EligibilityService {
   // Calculate eligibility score for a student-job pair
   static calculateEligibilityScore(student, job) {
+    if (!student || !job) return 0;
+    
     let score = 0;
     let maxScore = 100;
 
     // CGPA Check (30 points)
-    if (student.academics.cgpa >= job.eligibility.minimumCGPA) {
-      const cgpaScore = Math.min(30, (student.academics.cgpa / 10) * 30);
+    const studentCGPA = student.academics?.cgpa || 0;
+    const requiredCGPA = job.eligibility?.minimumCGPA || 0;
+    if (studentCGPA >= requiredCGPA) {
+      const cgpaScore = Math.min(30, (studentCGPA / 10) * 30);
       score += cgpaScore;
     }
 
     // Branch Check (25 points)
-    if (job.eligibility.branches.includes(student.personalInfo.branch) || 
-        job.eligibility.branches.includes('ALL')) {
+    const jobBranches = job.eligibility?.branches || [];
+    const studentBranch = student.personalInfo?.branch || '';
+    if (jobBranches.includes(studentBranch) || jobBranches.includes('ALL')) {
       score += 25;
     }
 
     // Backlog Check (20 points)
-    if (job.eligibility.allowBacklogs || student.academics.backlogs === 0) {
-      if (student.academics.backlogs <= job.eligibility.maxBacklogs) {
+    const allowBacklogs = job.eligibility?.allowBacklogs || false;
+    const studentBacklogs = student.academics?.backlogs || 0;
+    const maxBacklogs = job.eligibility?.maxBacklogs || 0;
+    if (allowBacklogs || studentBacklogs === 0) {
+      if (studentBacklogs <= maxBacklogs) {
         score += 20;
       }
     }
 
     // Batch Check (15 points)
-    if (job.eligibility.batch.includes(student.personalInfo.batch)) {
+    const jobBatches = job.eligibility?.batch || [];
+    const studentBatch = student.personalInfo?.batch || 0;
+    if (jobBatches.includes(studentBatch)) {
       score += 15;
     }
 
     // Skills Match (10 points)
     const studentSkills = [
-      ...student.skills.technical,
-      ...student.skills.programming,
-      ...student.skills.frameworks
+      ...(student.skills?.technical || []),
+      ...(student.skills?.programming || []),
+      ...(student.skills?.frameworks || [])
     ].map(skill => skill.toLowerCase());
 
-    const requiredSkills = job.eligibility.requiredSkills.map(skill => skill.toLowerCase());
+    const requiredSkills = (job.eligibility?.requiredSkills || []).map(skill => skill.toLowerCase());
     const matchedSkills = requiredSkills.filter(skill => 
       studentSkills.some(studentSkill => studentSkill.includes(skill))
     );
@@ -55,13 +65,15 @@ class EligibilityService {
 
   // Check if student is eligible for a job
   static isEligible(student, job) {
-    // Basic eligibility checks
-    const cgpaEligible = student.academics.cgpa >= job.eligibility.minimumCGPA;
-    const branchEligible = job.eligibility.branches.includes(student.personalInfo.branch) || 
-                          job.eligibility.branches.includes('ALL');
-    const backlogEligible = job.eligibility.allowBacklogs || 
-                           student.academics.backlogs <= job.eligibility.maxBacklogs;
-    const batchEligible = job.eligibility.batch.includes(student.personalInfo.batch);
+    if (!student || !job) return false;
+    
+    // Basic eligibility checks with safe access
+    const cgpaEligible = (student.academics?.cgpa || 0) >= (job.eligibility?.minimumCGPA || 0);
+    const branchEligible = (job.eligibility?.branches || []).includes(student.personalInfo?.branch) || 
+                          (job.eligibility?.branches || []).includes('ALL');
+    const backlogEligible = (job.eligibility?.allowBacklogs || false) || 
+                           (student.academics?.backlogs || 0) <= (job.eligibility?.maxBacklogs || 0);
+    const batchEligible = (job.eligibility?.batch || []).includes(student.personalInfo?.batch);
 
     return cgpaEligible && branchEligible && backlogEligible && batchEligible;
   }
@@ -70,18 +82,25 @@ class EligibilityService {
   static async getEligibleJobs(studentId) {
     try {
       const student = await StudentProfile.findOne({ userId: studentId });
-      if (!student) {
-        throw new Error('Student profile not found');
-      }
-
+      
+      // Get all active jobs
       const activeJobs = await Job.find({ 
         status: 'active',
         applicationDeadline: { $gte: new Date() }
       }).populate('companyId');
 
+      // If no student profile, return all jobs with basic info
+      if (!student) {
+        return activeJobs.map(job => ({
+          ...job.toObject(),
+          eligibilityScore: 50 // Default score
+        }));
+      }
+
       const eligibleJobs = [];
 
       for (const job of activeJobs) {
+        // If student has basic profile, check eligibility
         if (this.isEligible(student, job)) {
           const eligibilityScore = this.calculateEligibilityScore(student, job);
           eligibleJobs.push({
@@ -89,6 +108,14 @@ class EligibilityService {
             eligibilityScore
           });
         }
+      }
+
+      // If no eligible jobs found, return all jobs with lower scores
+      if (eligibleJobs.length === 0) {
+        return activeJobs.map(job => ({
+          ...job.toObject(),
+          eligibilityScore: 30 // Lower score for non-eligible
+        }));
       }
 
       // Sort by eligibility score (highest first)

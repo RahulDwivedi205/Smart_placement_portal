@@ -21,7 +21,7 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await axios.get('/api/student/dashboard');
+      const response = await axios.get('/student/dashboard');
       if (response.data.success) {
         setDashboardData(response.data.data);
       } else {
@@ -105,11 +105,16 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2">
-                Welcome back, {profile?.personalInfo?.name || 'Student'}!
+                Welcome back, {profile?.personalInfo?.firstName || 'Student'}!
               </h1>
               <p className="text-blue-100 text-lg">
                 Here's your placement journey overview
               </p>
+              {profile?.personalInfo?.firstName === 'Student' && (
+                <p className="text-yellow-200 text-sm mt-2 font-medium">
+                  ⚠️ Please complete your profile to get better job recommendations
+                </p>
+              )}
             </div>
             <div className="hidden md:block">
               <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center">

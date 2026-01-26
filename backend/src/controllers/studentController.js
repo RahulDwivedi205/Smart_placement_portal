@@ -6,6 +6,44 @@ const MatchingService = require('../services/matchingService');
 const PRSService = require('../services/prsService');
 
 class StudentController {
+  // Helper function to ensure student profile exists
+  static async ensureStudentProfile(userId) {
+    let student = await StudentProfile.findOne({ userId });
+    
+    if (!student) {
+      student = new StudentProfile({
+        userId,
+        personalInfo: {
+          firstName: 'Student',
+          lastName: 'User',
+          rollNumber: 'TEMP001',
+          branch: 'CSE',
+          batch: 2024,
+          phone: '0000000000',
+          currentSemester: 1
+        },
+        academics: {
+          cgpa: 0,
+          backlogs: 0,
+          tenthMarks: 0,
+          twelfthMarks: 0
+        },
+        skills: {
+          technical: [],
+          programming: [],
+          frameworks: [],
+          tools: []
+        },
+        experience: [],
+        projects: [],
+        achievements: []
+      });
+      await student.save();
+    }
+    
+    return student;
+  }
+
   // Get student profile
   static async getProfile(req, res) {
     try {
@@ -64,6 +102,7 @@ class StudentController {
   // Get eligible jobs for student
   static async getEligibleJobs(req, res) {
     try {
+      await StudentController.ensureStudentProfile(req.user.id);
       const jobs = await EligibilityService.getEligibleJobs(req.user.id);
       res.json({
         success: true,
@@ -158,7 +197,7 @@ class StudentController {
   // Get student dashboard data
   static async getDashboardData(req, res) {
     try {
-      const student = await StudentProfile.findOne({ userId: req.user.id });
+      const student = await StudentController.ensureStudentProfile(req.user.id);
       const applications = await Application.find({ studentId: req.user.id });
       const eligibleJobs = await EligibilityService.getEligibleJobs(req.user.id);
 
