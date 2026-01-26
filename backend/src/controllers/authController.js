@@ -34,20 +34,6 @@ const register = async (req, res) => {
     const user = new User({ email, password, role });
     await user.save();
 
-    if (role === 'student') {
-      const studentProfile = new StudentProfile({
-        userId: user._id,
-        ...profileData
-      });
-      await studentProfile.save();
-    } else if (role === 'company') {
-      const companyProfile = new Company({
-        userId: user._id,
-        ...profileData
-      });
-      await companyProfile.save();
-    }
-
     const token = generateToken(user._id);
 
     res.status(201).json({

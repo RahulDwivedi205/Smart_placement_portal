@@ -42,8 +42,12 @@ class StudentController {
 
       // Recalculate PRS after profile update
       const prsResult = await PRSService.calculatePRS(req.user.id);
-      profile.placementReadinessScore = prsResult.score;
-      await profile.save();
+      
+      // Update the profile with the new PRS score
+      await StudentProfile.findOneAndUpdate(
+        { userId: req.user.id },
+        { placementReadinessScore: prsResult.score }
+      );
 
       res.json({
         success: true,

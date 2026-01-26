@@ -10,120 +10,21 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Profile = () => {
-  const [profile, setProfile] = useState(null);
-  const [prsData, setPrsData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('personal');
-
-  useEffect(() => {
-    fetchProfile();
-    fetchPRS();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const response = await api.get('/student/profile');
-      if (response.data.success) {
-        setProfile(response.data.data);
-      } else {
-        setError(response.data.message || 'Failed to load profile');
-      }
-    } catch (err) {
-      setError('Failed to load profile');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPRS = async () => {
-    try {
-      const response = await api.get('/student/prs');
-      if (response.data.success) {
-        setPrsData(response.data);
-      } else {
-        console.error('Failed to load PRS data:', response.data.message);
-      }
-    } catch (err) {
-      console.error('Failed to load PRS data:', err);
-    }
-  };
-
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      const response = await api.put('/student/profile', currentProfile);
-      if (response.data.success) {
-        alert('Profile updated successfully!');
-        fetchPRS();
-      }
-    } catch (err) {
-      alert('Failed to update profile');
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updateProfile = (section, field, value) => {
-    const updatedProfile = {
-      ...currentProfile,
-      [section]: {
-        ...currentProfile[section],
-        [field]: value
-      }
-    };
-    setProfile(updatedProfile);
-  };
-
-  const addSkill = (category, skill) => {
-    if (!skill.trim()) return;
-    
-    const updatedProfile = {
-      ...currentProfile,
-      skills: {
-        ...currentProfile.skills,
-        [category]: [...(currentProfile.skills[category] || []), skill.trim()]
-      }
-    };
-    setProfile(updatedProfile);
-  };
-
-  const removeSkill = (category, index) => {
-    const updatedProfile = {
-      ...currentProfile,
-      skills: {
-        ...currentProfile.skills,
-        [category]: currentProfile.skills[category].filter((_, i) => i !== index)
-      }
-    };
-    setProfile(updatedProfile);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
-      </div>
-    );
-  }
-
-  const currentProfile = profile || {
+  const [profile, setProfile] = useState({
     personalInfo: {
-      name: '',
+      firstName: '',
+      lastName: '',
       rollNumber: '',
       branch: '',
       batch: '',
       phone: '',
-      address: ''
+      currentSemester: ''
     },
     academics: {
-      cgpa: 0,
-      backlogs: 0,
-      tenthMarks: 0,
-      twelfthMarks: 0
+      cgpa: '',
+      backlogs: '',
+      tenthMarks: '',
+      twelfthMarks: ''
     },
     skills: {
       technical: [],
@@ -134,7 +35,219 @@ const Profile = () => {
     experience: [],
     projects: [],
     achievements: []
+  });
+  const [prsData, setPrsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [activeTab, setActiveTab] = useState('personal');
+
+  useEffect(() => {
+    fetchProfile();
+    fetchPRS();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/student/profile');
+      console.log('Profile response:', response.data);
+      
+      if (response.data.success && response.data.data) {
+        const profileData = response.data.data;
+        console.log('Received profile data:', profileData);
+        setProfile({
+          personalInfo: {
+            firstName: profileData.personalInfo?.firstName || '',
+            lastName: profileData.personalInfo?.lastName || '',
+            rollNumber: profileData.personalInfo?.rollNumber || '',
+            branch: profileData.personalInfo?.branch || '',
+            batch: profileData.personalInfo?.batch || '',
+            phone: profileData.personalInfo?.phone || '',
+            currentSemester: profileData.personalInfo?.currentSemester || ''
+          },
+          academics: {
+            cgpa: profileData.academics?.cgpa || '',
+            backlogs: profileData.academics?.backlogs || '',
+            tenthMarks: profileData.academics?.tenthMarks || '',
+            twelfthMarks: profileData.academics?.twelfthMarks || ''
+          },
+          skills: {
+            technical: profileData.skills?.technical || [],
+            programming: profileData.skills?.programming || [],
+            frameworks: profileData.skills?.frameworks || [],
+            tools: profileData.skills?.tools || []
+          },
+          experience: profileData.experience || [],
+          projects: profileData.projects || [],
+          achievements: profileData.academics?.achievements || []
+        });
+        setError('');
+      } else {
+        console.log('No existing profile found, using default values');
+        setError('');
+      }
+    } catch (err) {
+      console.error('Profile fetch error:', err);
+      if (err.response?.status === 404) {
+        console.log('Profile not found, using default values');
+        setError('');
+      } else {
+        setError('Failed to load profile');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const fetchPRS = async () => {
+    try {
+      const response = await api.get('/student/prs');
+      if (response.data.success) {
+        setPrsData(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to load PRS data:', err);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError('');
+      setSuccess('');
+      
+      // Validate required fields
+      const requiredFields = [
+        { field: profile.personalInfo.firstName, name: 'First Name' },
+        { field: profile.personalInfo.lastName, name: 'Last Name' },
+        { field: profile.personalInfo.rollNumber, name: 'Roll Number' },
+        { field: profile.personalInfo.branch, name: 'Branch' },
+        { field: profile.personalInfo.batch, name: 'Batch Year' },
+        { field: profile.personalInfo.currentSemester, name: 'Current Semester' },
+        { field: profile.personalInfo.phone, name: 'Phone Number' },
+        { field: profile.academics.cgpa, name: 'CGPA' },
+        { field: profile.academics.tenthMarks, name: '10th Grade Marks' },
+        { field: profile.academics.twelfthMarks, name: '12th Grade Marks' }
+      ];
+
+      const missingFields = requiredFields.filter(item => !item.field || item.field === '');
+      
+      if (missingFields.length > 0) {
+        setError(`Please fill in the following required fields: ${missingFields.map(item => item.name).join(', ')}`);
+        return;
+      }
+
+      // Validate CGPA range
+      if (profile.academics.cgpa < 0 || profile.academics.cgpa > 10) {
+        setError('CGPA must be between 0 and 10');
+        return;
+      }
+
+      // Validate percentage ranges
+      if (profile.academics.tenthMarks < 0 || profile.academics.tenthMarks > 100) {
+        setError('10th Grade marks must be between 0 and 100');
+        return;
+      }
+
+      if (profile.academics.twelfthMarks < 0 || profile.academics.twelfthMarks > 100) {
+        setError('12th Grade marks must be between 0 and 100');
+        return;
+      }
+      
+      // Convert string values to appropriate types
+      const profileToSave = {
+        ...profile,
+        personalInfo: {
+          ...profile.personalInfo,
+          batch: parseInt(profile.personalInfo.batch) || 0,
+          currentSemester: parseInt(profile.personalInfo.currentSemester) || 1
+        },
+        academics: {
+          ...profile.academics,
+          cgpa: parseFloat(profile.academics.cgpa) || 0,
+          backlogs: parseInt(profile.academics.backlogs) || 0,
+          tenthMarks: parseFloat(profile.academics.tenthMarks) || 0,
+          twelfthMarks: parseFloat(profile.academics.twelfthMarks) || 0,
+          achievements: profile.achievements || []
+        }
+      };
+      
+      console.log('Saving profile:', profileToSave);
+      const response = await api.put('/student/profile', profileToSave);
+      console.log('Save response:', response.data);
+      
+      if (response.data.success) {
+        setSuccess('Profile updated successfully!');
+        fetchPRS();
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(response.data.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      console.error('Save error:', err);
+      setError(err.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateProfile = (section, field, value) => {
+    setProfile(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }));
+  };
+
+  const addSkill = (category, skill) => {
+    if (!skill.trim()) return;
+    
+    setProfile(prev => ({
+      ...prev,
+      skills: {
+        ...prev.skills,
+        [category]: [...prev.skills[category], skill.trim()]
+      }
+    }));
+  };
+
+  const removeSkill = (category, index) => {
+    setProfile(prev => ({
+      ...prev,
+      skills: {
+        ...prev.skills,
+        [category]: prev.skills[category].filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const addAchievement = (achievement) => {
+    if (!achievement.trim()) return;
+    
+    setProfile(prev => ({
+      ...prev,
+      achievements: [...prev.achievements, achievement.trim()]
+    }));
+  };
+
+  const removeAchievement = (index) => {
+    setProfile(prev => ({
+      ...prev,
+      achievements: prev.achievements.filter((_, i) => i !== index)
+    }));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: 'personal', name: 'Personal Info', icon: UserIcon },
@@ -196,39 +309,60 @@ const Profile = () => {
               </div>
             )}
 
+            {success && (
+              <div className="glass-card bg-green-500 bg-opacity-20 border-green-300 text-green-100 px-4 py-3 rounded-xl mb-6">
+                {success}
+              </div>
+            )}
+
             {activeTab === 'personal' && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-blue-100 mb-2">
-                      Full Name
+                      First Name *
                     </label>
                     <input
                       type="text"
-                      value={currentProfile.personalInfo?.name || ''}
-                      onChange={(e) => updateProfile('personalInfo', 'name', e.target.value)}
+                      value={profile.personalInfo.firstName}
+                      onChange={(e) => updateProfile('personalInfo', 'firstName', e.target.value)}
                       className="glass-input w-full px-4 py-3"
+                      placeholder="Enter your first name"
                     />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-blue-100 mb-2">
-                      Roll Number
+                      Last Name *
                     </label>
                     <input
                       type="text"
-                      value={currentProfile.personalInfo?.rollNumber || ''}
+                      value={profile.personalInfo.lastName}
+                      onChange={(e) => updateProfile('personalInfo', 'lastName', e.target.value)}
+                      className="glass-input w-full px-4 py-3"
+                      placeholder="Enter your last name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-blue-100 mb-2">
+                      Roll Number *
+                    </label>
+                    <input
+                      type="text"
+                      value={profile.personalInfo.rollNumber}
                       onChange={(e) => updateProfile('personalInfo', 'rollNumber', e.target.value)}
                       className="glass-input w-full px-4 py-3"
+                      placeholder="Enter your roll number"
                     />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-blue-100 mb-2">
-                      Branch
+                      Branch *
                     </label>
                     <select
-                      value={currentProfile.personalInfo?.branch || ''}
+                      value={profile.personalInfo.branch}
                       onChange={(e) => updateProfile('personalInfo', 'branch', e.target.value)}
                       className="glass-input w-full px-4 py-3"
                     >
@@ -244,37 +378,50 @@ const Profile = () => {
                   
                   <div>
                     <label className="block text-sm font-medium text-blue-100 mb-2">
-                      Batch Year
+                      Batch Year *
                     </label>
                     <input
                       type="number"
-                      value={currentProfile.personalInfo?.batch || ''}
+                      value={profile.personalInfo.batch}
                       onChange={(e) => updateProfile('personalInfo', 'batch', e.target.value)}
                       className="glass-input w-full px-4 py-3"
+                      placeholder="e.g., 2024"
+                      min="2020"
+                      max="2030"
                     />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-blue-100 mb-2">
-                      Phone Number
+                      Current Semester *
+                    </label>
+                    <select
+                      value={profile.personalInfo.currentSemester}
+                      onChange={(e) => updateProfile('personalInfo', 'currentSemester', e.target.value)}
+                      className="glass-input w-full px-4 py-3"
+                    >
+                      <option value="">Select Semester</option>
+                      <option value="1">1st Semester</option>
+                      <option value="2">2nd Semester</option>
+                      <option value="3">3rd Semester</option>
+                      <option value="4">4th Semester</option>
+                      <option value="5">5th Semester</option>
+                      <option value="6">6th Semester</option>
+                      <option value="7">7th Semester</option>
+                      <option value="8">8th Semester</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-blue-100 mb-2">
+                      Phone Number *
                     </label>
                     <input
                       type="tel"
-                      value={currentProfile.personalInfo?.phone || ''}
+                      value={profile.personalInfo.phone}
                       onChange={(e) => updateProfile('personalInfo', 'phone', e.target.value)}
                       className="glass-input w-full px-4 py-3"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-blue-100 mb-2">
-                      Address
-                    </label>
-                    <textarea
-                      value={currentProfile.personalInfo?.address || ''}
-                      onChange={(e) => updateProfile('personalInfo', 'address', e.target.value)}
-                      rows={3}
-                      className="glass-input w-full px-4 py-3"
+                      placeholder="Enter your phone number"
                     />
                   </div>
                 </div>
@@ -286,15 +433,17 @@ const Profile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-blue-100 mb-2">
-                      Current CGPA
+                      Current CGPA *
                     </label>
                     <input
                       type="number"
                       step="0.01"
+                      min="0"
                       max="10"
-                      value={currentProfile.academics?.cgpa || ''}
-                      onChange={(e) => updateProfile('academics', 'cgpa', parseFloat(e.target.value))}
+                      value={profile.academics.cgpa}
+                      onChange={(e) => updateProfile('academics', 'cgpa', e.target.value)}
                       className="glass-input w-full px-4 py-3"
+                      placeholder="e.g., 8.5"
                     />
                   </div>
                   
@@ -305,37 +454,42 @@ const Profile = () => {
                     <input
                       type="number"
                       min="0"
-                      value={currentProfile.academics?.backlogs || ''}
-                      onChange={(e) => updateProfile('academics', 'backlogs', parseInt(e.target.value))}
+                      value={profile.academics.backlogs}
+                      onChange={(e) => updateProfile('academics', 'backlogs', e.target.value)}
                       className="glass-input w-full px-4 py-3"
+                      placeholder="0"
                     />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-blue-100 mb-2">
-                      10th Grade Percentage
+                      10th Grade Percentage *
                     </label>
                     <input
                       type="number"
                       step="0.01"
+                      min="0"
                       max="100"
-                      value={currentProfile.academics?.tenthMarks || ''}
-                      onChange={(e) => updateProfile('academics', 'tenthMarks', parseFloat(e.target.value))}
+                      value={profile.academics.tenthMarks}
+                      onChange={(e) => updateProfile('academics', 'tenthMarks', e.target.value)}
                       className="glass-input w-full px-4 py-3"
+                      placeholder="e.g., 85.5"
                     />
                   </div>
                   
                   <div>
                     <label className="block text-sm font-medium text-blue-100 mb-2">
-                      12th Grade Percentage
+                      12th Grade Percentage *
                     </label>
                     <input
                       type="number"
                       step="0.01"
+                      min="0"
                       max="100"
-                      value={currentProfile.academics?.twelfthMarks || ''}
-                      onChange={(e) => updateProfile('academics', 'twelfthMarks', parseFloat(e.target.value))}
+                      value={profile.academics.twelfthMarks}
+                      onChange={(e) => updateProfile('academics', 'twelfthMarks', e.target.value)}
                       className="glass-input w-full px-4 py-3"
+                      placeholder="e.g., 88.2"
                     />
                   </div>
                 </div>
@@ -350,7 +504,7 @@ const Profile = () => {
                       {category} Skills
                     </h3>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      {(currentProfile.skills?.[category] || []).map((skill, index) => (
+                      {profile.skills[category].map((skill, index) => (
                         <span
                           key={index}
                           className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-500 bg-opacity-30 text-blue-100 border border-blue-400"
@@ -390,6 +544,51 @@ const Profile = () => {
                     </div>
                   </div>
                 ))}
+
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-4">
+                    Achievements
+                  </h3>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {profile.achievements.map((achievement, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-500 bg-opacity-30 text-green-100 border border-green-400"
+                      >
+                        {achievement}
+                        <button
+                          onClick={() => removeAchievement(index)}
+                          className="ml-2 text-green-200 hover:text-white"
+                        >
+                          <XMarkIcon className="h-4 w-4" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex">
+                    <input
+                      type="text"
+                      placeholder="Add achievement"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          addAchievement(e.target.value);
+                          e.target.value = '';
+                        }
+                      }}
+                      className="glass-input flex-1 rounded-r-none px-4 py-3"
+                    />
+                    <button
+                      onClick={(e) => {
+                        const input = e.target.previousElementSibling;
+                        addAchievement(input.value);
+                        input.value = '';
+                      }}
+                      className="px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-r-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-300"
+                    >
+                      <PlusIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 

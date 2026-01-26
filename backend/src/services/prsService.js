@@ -5,7 +5,7 @@ class PRSService {
     try {
       const student = await StudentProfile.findOne({ userId: studentId });
       if (!student) {
-        return 0;
+        return { score: 0, breakdown: {} };
       }
 
       let totalScore = 0;
@@ -52,9 +52,11 @@ class PRSService {
 
       const finalScore = Math.round(totalScore);
       
-      // Update student's PRS in database
-      student.placementReadinessScore = finalScore;
-      await student.save();
+      // Update student's PRS in database only if student exists
+      if (student) {
+        student.placementReadinessScore = finalScore;
+        await student.save();
+      }
 
       return { score: finalScore, breakdown };
     } catch (error) {

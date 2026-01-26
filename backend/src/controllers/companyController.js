@@ -6,19 +6,47 @@ const EligibilityService = require('../services/eligibilityService');
 const MatchingService = require('../services/matchingService');
 
 class CompanyController {
+  // Helper function to ensure company profile exists
+  static async ensureCompanyProfile(userId) {
+    let company = await Company.findOne({ userId });
+    
+    if (!company) {
+      company = new Company({
+        userId,
+        companyInfo: {
+          name: 'Your Company Name',
+          industry: 'Technology',
+          size: 'medium'
+        },
+        hrDetails: {
+          name: 'HR Manager',
+          phone: '0000000000'
+        }
+      });
+      await company.save();
+    }
+    
+    return company;
+  }
+
   // Get company profile
   static async getProfile(req, res) {
     try {
-      const company = await Company.findOne({ userId: req.user.id })
+      let company = await Company.findOne({ userId: req.user.id })
         .populate('userId', 'email');
       
+      // If no company profile exists, create a basic one
       if (!company) {
-        return res.status(404).json({ message: 'Company profile not found' });
+        company = await CompanyController.ensureCompanyProfile(req.user.id);
+        company = await Company.findById(company._id).populate('userId', 'email');
       }
 
       res.json(company);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
     }
   }
 
@@ -33,42 +61,75 @@ class CompanyController {
 
       res.json(company);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
     }
   }
 
   // Create a new job posting
   static async createJob(req, res) {
     try {
-      const company = await Company.findOne({ userId: req.user.id });
-      if (!company) {
-        return res.status(404).json({ message: 'Company profile not found' });
-      }
+      const company = await CompanyController.ensureCompanyProfile(req.user.id);
 
       const job = new Job({
         ...req.body,
         companyId: company._id,
         postedBy: req.user.id,
-        status: 'active'
+        status: req.body.status || 'active'
       });
 
       await job.save();
-      res.status(201).json(job);
+      res.status(201).json({
+        success: true,
+        data: job
+      });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
     }
   }
 
   // Get company jobs
   static async getJobs(req, res) {
     try {
-      const company = await Company.findOne({ userId: req.user.id });
+      const company = await CompanyController.ensureCompanyProfile(req.user.id);
+      
       const jobs = await Job.find({ companyId: company._id })
         .sort({ createdAt: -1 });
 
       res.json(jobs);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
+    }
+  }
+
+  // Get single job
+  static async getJob(req, res) {
+    try {
+      const { jobId } = req.params;
+      const company = await CompanyController.ensureCompanyProfile(req.user.id);
+      
+      const job = await Job.findOne({ _id: jobId, companyId: company._id });
+      if (!job) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Job not found' 
+        });
+      }
+
+      res.json(job);
+    } catch (error) {
+      res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
     }
   }
 
@@ -76,7 +137,7 @@ class CompanyController {
   static async updateJob(req, res) {
     try {
       const { jobId } = req.params;
-      const company = await Company.findOne({ userId: req.user.id });
+      const company = await CompanyController.ensureCompanyProfile(req.user.id);
       
       const job = await Job.findOneAndUpdate(
         { _id: jobId, companyId: company._id },
@@ -85,12 +146,47 @@ class CompanyController {
       );
 
       if (!job) {
-        return res.status(404).json({ message: 'Job not found' });
+        return res.status(404).json({ 
+          success: false,
+          message: 'Job not found' 
+        });
       }
 
-      res.json(job);
+      res.json({
+        success: true,
+        data: job
+      });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
+    }
+  }
+
+  // Delete job
+  static async deleteJob(req, res) {
+    try {
+      const { jobId } = req.params;
+      const company = await CompanyController.ensureCompanyProfile(req.user.id);
+      
+      const job = await Job.findOneAndDelete({ _id: jobId, companyId: company._id });
+      if (!job) {
+        return res.status(404).json({ 
+          success: false,
+          message: 'Job not found' 
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Job deleted successfully'
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
     }
   }
 
@@ -103,17 +199,29 @@ class CompanyController {
       // Verify job belongs to company
       const job = await Job.findOne({ _id: jobId, companyId: company._id });
       if (!job) {
-        return res.status(404).json({ message: 'Job not found' });
+        return res.status(404).json({ 
+          success: false,
+          message: 'Job not found' 
+        });
       }
 
       const applications = await Application.find({ jobId })
-        .populate('studentId')
+        .populate({
+          path: 'studentId',
+          populate: {
+            path: 'userId',
+            select: 'email'
+          }
+        })
         .populate('interviewRounds')
         .sort({ appliedAt: -1 });
 
       res.json(applications);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
     }
   }
 
@@ -210,7 +318,8 @@ class CompanyController {
   // Get company dashboard data
   static async getDashboardData(req, res) {
     try {
-      const company = await Company.findOne({ userId: req.user.id });
+      const company = await CompanyController.ensureCompanyProfile(req.user.id);
+      
       const jobs = await Job.find({ companyId: company._id });
       const jobIds = jobs.map(job => job._id);
       const applications = await Application.find({ jobId: { $in: jobIds } });

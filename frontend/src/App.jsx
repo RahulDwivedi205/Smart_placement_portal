@@ -13,6 +13,10 @@ import AdminDashboard from './pages/admin/Dashboard';
 import JobListings from './pages/student/JobListings';
 import Applications from './pages/student/Applications';
 import Profile from './pages/student/Profile';
+import CompanyProfile from './pages/company/Profile';
+import CompanyJobs from './pages/company/Jobs';
+import JobForm from './pages/company/JobForm';
+import CompanyApplications from './pages/company/Applications';
 import AdminCompanies from './pages/admin/Companies';
 import AdminApplications from './pages/admin/Applications';
 import PlacementProcess from './pages/admin/PlacementProcess';
@@ -79,6 +83,46 @@ function AppRoutes() {
             element={
               <ProtectedRoute allowedRoles={['company']}>
                 <CompanyDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/company/profile" 
+            element={
+              <ProtectedRoute allowedRoles={['company']}>
+                <CompanyProfile />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/company/jobs" 
+            element={
+              <ProtectedRoute allowedRoles={['company']}>
+                <CompanyJobs />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/company/jobs/new" 
+            element={
+              <ProtectedRoute allowedRoles={['company']}>
+                <JobForm />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/company/jobs/:jobId/edit" 
+            element={
+              <ProtectedRoute allowedRoles={['company']}>
+                <JobForm />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/company/applications" 
+            element={
+              <ProtectedRoute allowedRoles={['company']}>
+                <CompanyApplications />
               </ProtectedRoute>
             } 
           />
