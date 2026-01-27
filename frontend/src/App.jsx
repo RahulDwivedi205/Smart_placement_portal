@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { useAuth } from './context/AuthContext';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 import Layout from './components/layout/Layout';
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -21,158 +23,162 @@ import AdminCompanies from './pages/admin/Companies';
 import AdminApplications from './pages/admin/Applications';
 import PlacementProcess from './pages/admin/PlacementProcess';
 
+import { USER_ROLES, ROUTES } from './constants';
+import LoadingSpinner from './components/ui/LoadingSpinner';
+
 function AppRoutes() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen text="Loading application..." />;
   }
 
   return (
     <Router>
       <Routes>
         <Route 
-          path="/login" 
+          path={ROUTES.LOGIN}
           element={!user ? <Login /> : <Navigate to={`/${user.role}`} />} 
         />
         <Route 
-          path="/register" 
+          path={ROUTES.REGISTER}
           element={!user ? <Register /> : <Navigate to={`/${user.role}`} />} 
         />
 
         <Route path="/" element={<Layout />}>
+          {/* Student Routes */}
           <Route 
-            path="/student" 
+            path={ROUTES.STUDENT.DASHBOARD}
             element={
-              <ProtectedRoute allowedRoles={['student']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.STUDENT]}>
                 <StudentDashboard />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/student/jobs" 
+            path={ROUTES.STUDENT.JOBS}
             element={
-              <ProtectedRoute allowedRoles={['student']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.STUDENT]}>
                 <JobListings />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/student/applications" 
+            path={ROUTES.STUDENT.APPLICATIONS}
             element={
-              <ProtectedRoute allowedRoles={['student']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.STUDENT]}>
                 <Applications />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/student/profile" 
+            path={ROUTES.STUDENT.PROFILE}
             element={
-              <ProtectedRoute allowedRoles={['student']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.STUDENT]}>
                 <Profile />
               </ProtectedRoute>
             } 
           />
 
+          {/* Company Routes */}
           <Route 
-            path="/company" 
+            path={ROUTES.COMPANY.DASHBOARD}
             element={
-              <ProtectedRoute allowedRoles={['company']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.COMPANY]}>
                 <CompanyDashboard />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/company/profile" 
+            path={ROUTES.COMPANY.PROFILE}
             element={
-              <ProtectedRoute allowedRoles={['company']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.COMPANY]}>
                 <CompanyProfile />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/company/jobs" 
+            path={ROUTES.COMPANY.JOBS}
             element={
-              <ProtectedRoute allowedRoles={['company']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.COMPANY]}>
                 <CompanyJobs />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/company/jobs/new" 
+            path={ROUTES.COMPANY.JOB_NEW}
             element={
-              <ProtectedRoute allowedRoles={['company']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.COMPANY]}>
                 <JobForm />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/company/jobs/:jobId/edit" 
+            path="/company/jobs/:jobId/edit"
             element={
-              <ProtectedRoute allowedRoles={['company']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.COMPANY]}>
                 <JobForm />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/company/applications" 
+            path={ROUTES.COMPANY.APPLICATIONS}
             element={
-              <ProtectedRoute allowedRoles={['company']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.COMPANY]}>
                 <CompanyApplications />
               </ProtectedRoute>
             } 
           />
 
+          {/* Admin Routes */}
           <Route 
-            path="/admin" 
+            path={ROUTES.ADMIN.DASHBOARD}
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
                 <AdminDashboard />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/admin/companies" 
+            path={ROUTES.ADMIN.COMPANIES}
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
                 <AdminCompanies />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/admin/applications" 
+            path={ROUTES.ADMIN.APPLICATIONS}
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
                 <AdminApplications />
               </ProtectedRoute>
             } 
           />
           <Route 
-            path="/admin/placement-process" 
+            path={ROUTES.ADMIN.PLACEMENT_PROCESS}
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={[USER_ROLES.ADMIN]}>
                 <PlacementProcess />
               </ProtectedRoute>
             } 
           />
 
+          {/* Default Route */}
           <Route 
-            path="/" 
+            path={ROUTES.HOME}
             element={
               user ? (
                 <Navigate to={`/${user.role}`} />
               ) : (
-                <Navigate to="/login" />
+                <Navigate to={ROUTES.LOGIN} />
               )
             } 
           />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" />} />
+        {/* Catch all route */}
+        <Route path="*" element={<Navigate to={ROUTES.HOME} />} />
       </Routes>
     </Router>
   );
@@ -180,9 +186,13 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <ErrorBoundary>
+      <NotificationProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </NotificationProvider>
+    </ErrorBoundary>
   );
 }
 

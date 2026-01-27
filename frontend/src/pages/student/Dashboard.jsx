@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from '../../api/axios';
+import BackButton from '../../components/common/BackButton';
+import Button from '../../components/ui/Button';
+import Card from '../../components/ui/Card';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { useNotification } from '../../context/NotificationContext';
+import { studentService } from '../../services/apiService';
+import { formatDate, getErrorMessage } from '../../utils';
+import { ROUTES, USER_ROLES } from '../../constants';
 import { 
   BriefcaseIcon, 
   ClockIcon, 
@@ -13,7 +20,7 @@ import {
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { showNotification } = useNotification();
 
   useEffect(() => {
     fetchDashboardData();
@@ -21,32 +28,33 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await axios.get('/student/dashboard');
-      if (response.data.success) {
-        setDashboardData(response.data.data);
-      } else {
-        setError(response.data.message || 'Failed to load dashboard data');
-      }
-    } catch (err) {
-      setError('Failed to load dashboard data');
-      console.error(err);
+      setLoading(true);
+      const response = await studentService.getDashboard();
+      setDashboardData(response.data);
+    } catch (error) {
+      const errorMessage = getErrorMessage(error);
+      showNotification(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen text="Loading dashboard..." />;
   }
 
-  if (error) {
+  if (!dashboardData) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
-        {error}
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <BackButton to={ROUTES.LOGIN} className="mb-4" />
+          <Card className="p-8 text-center">
+            <p className="text-red-600">Failed to load dashboard data. Please try again.</p>
+            <Button onClick={fetchDashboardData} className="mt-4">
+              Retry
+            </Button>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -59,50 +67,54 @@ const Dashboard = () => {
       value: stats.totalApplications,
       icon: DocumentTextIcon,
       gradient: 'from-blue-500 to-blue-600',
-      link: '/student/applications'
+      link: ROUTES.STUDENT.APPLICATIONS
     },
     {
       title: 'Pending Applications',
       value: stats.pendingApplications,
       icon: ClockIcon,
       gradient: 'from-amber-500 to-orange-500',
-      link: '/student/applications'
+      link: ROUTES.STUDENT.APPLICATIONS
     },
     {
       title: 'Interviews Scheduled',
       value: stats.interviewsScheduled,
       icon: UserIcon,
       gradient: 'from-purple-500 to-purple-600',
-      link: '/student/applications'
+      link: ROUTES.STUDENT.APPLICATIONS
     },
     {
       title: 'Offers Received',
       value: stats.offersReceived,
       icon: CheckCircleIcon,
       gradient: 'from-green-500 to-green-600',
-      link: '/student/applications'
+      link: ROUTES.STUDENT.APPLICATIONS
     },
     {
       title: 'Eligible Jobs',
       value: stats.eligibleJobs,
       icon: BriefcaseIcon,
       gradient: 'from-indigo-500 to-indigo-600',
-      link: '/student/jobs'
+      link: ROUTES.STUDENT.JOBS
     },
     {
       title: 'PRS Score',
       value: `${stats.placementReadinessScore}/100`,
       icon: ChartBarIcon,
       gradient: 'from-pink-500 to-rose-500',
-      link: '/student/profile'
+      link: ROUTES.STUDENT.PROFILE
     }
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white shadow-xl">
-          <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
+          <BackButton to={ROUTES.LOGIN} className="mb-4" />
+        </div>
+        
+        <Card className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-xl">
+          <div className="flex items-center justify-between p-8">
             <div>
               <h1 className="text-3xl font-bold mb-2">
                 Welcome back, {profile?.personalInfo?.firstName || 'Student'}!
@@ -122,7 +134,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {statCards.map((stat, index) => (
@@ -155,16 +167,15 @@ const Dashboard = () => {
         </div>
 
         {profile && (
-          <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+          <Card className="p-8 shadow-lg">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">
                 Placement Readiness Score
               </h2>
-              <Link
-                to="/student/profile"
-                className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200 transition-colors font-medium"
-              >
-                Improve Score
+              <Link to={ROUTES.STUDENT.PROFILE}>
+                <Button variant="outline" size="sm">
+                  Improve Score
+                </Button>
               </Link>
             </div>
             <div className="flex items-center mb-4">
@@ -191,23 +202,22 @@ const Dashboard = () => {
                 : '🚀 Focus on building your skills and experience.'
               }
             </p>
-          </div>
+          </Card>
         )}
 
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+        <Card className="shadow-lg overflow-hidden">
           <div className="px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">
                 Recent Applications
               </h2>
-              <Link
-                to="/student/applications"
-                className="text-blue-600 hover:text-blue-700 font-medium flex items-center"
-              >
-                View All
-                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+              <Link to={ROUTES.STUDENT.APPLICATIONS}>
+                <Button variant="ghost" size="sm">
+                  View All
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Button>
               </Link>
             </div>
           </div>
@@ -221,7 +231,7 @@ const Dashboard = () => {
                         {application.jobId?.title}
                       </h3>
                       <p className="text-gray-600">
-                        Applied on {new Date(application.appliedAt).toLocaleDateString()}
+                        Applied on {formatDate(application.appliedAt)}
                       </p>
                     </div>
                     <div className="flex items-center">
@@ -249,22 +259,21 @@ const Dashboard = () => {
                 <p className="text-gray-600 mb-6">
                   Start applying to jobs to see them here.
                 </p>
-                <Link
-                  to="/student/jobs"
-                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg"
-                >
-                  Browse Jobs
+                <Link to={ROUTES.STUDENT.JOBS}>
+                  <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+                    Browse Jobs
+                  </Button>
                 </Link>
               </div>
             )}
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+        <Card className="p-8 shadow-lg">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Link
-              to="/student/jobs"
+              to={ROUTES.STUDENT.JOBS}
               className="group flex items-center p-6 border-2 border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
             >
               <div className="p-3 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors">
@@ -277,7 +286,7 @@ const Dashboard = () => {
             </Link>
             
             <Link
-              to="/student/profile"
+              to={ROUTES.STUDENT.PROFILE}
               className="group flex items-center p-6 border-2 border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition-all duration-200"
             >
               <div className="p-3 bg-green-100 rounded-xl group-hover:bg-green-200 transition-colors">
@@ -290,7 +299,7 @@ const Dashboard = () => {
             </Link>
             
             <Link
-              to="/student/applications"
+              to={ROUTES.STUDENT.APPLICATIONS}
               className="group flex items-center p-6 border-2 border-gray-200 rounded-xl hover:border-purple-300 hover:bg-purple-50 transition-all duration-200"
             >
               <div className="p-3 bg-purple-100 rounded-xl group-hover:bg-purple-200 transition-colors">
@@ -302,7 +311,7 @@ const Dashboard = () => {
               </div>
             </Link>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

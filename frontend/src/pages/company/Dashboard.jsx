@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api/axios';
+import BackButton from '../../components/common/BackButton';
 import { 
   BriefcaseIcon, 
   UserGroupIcon, 
@@ -96,6 +97,8 @@ const CompanyDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
+        <BackButton to="/login" className="mb-4" />
+        
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white shadow-xl">
           <div className="flex items-center justify-between">
             <div>

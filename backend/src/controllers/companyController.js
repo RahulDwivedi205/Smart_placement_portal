@@ -4,6 +4,9 @@ const Application = require('../models/Application');
 const InterviewRound = require('../models/InterviewRound');
 const EligibilityService = require('../services/eligibilityService');
 const MatchingService = require('../services/matchingService');
+const ResponseHandler = require('../utils/responseHandler');
+const asyncHandler = require('../utils/asyncHandler');
+const { SUCCESS_MESSAGES, ERROR_MESSAGES } = require('../config/constants');
 
 class CompanyController {
   // Helper function to ensure company profile exists
@@ -30,85 +33,54 @@ class CompanyController {
   }
 
   // Get company profile
-  static async getProfile(req, res) {
-    try {
-      let company = await Company.findOne({ userId: req.user.id })
-        .populate('userId', 'email');
-      
-      // If no company profile exists, create a basic one
-      if (!company) {
-        company = await CompanyController.ensureCompanyProfile(req.user.id);
-        company = await Company.findById(company._id).populate('userId', 'email');
-      }
-
-      res.json(company);
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
+  static getProfile = asyncHandler(async (req, res) => {
+    let company = await Company.findOne({ userId: req.user.id })
+      .populate('userId', 'email');
+    
+    // If no company profile exists, create a basic one
+    if (!company) {
+      company = await CompanyController.ensureCompanyProfile(req.user.id);
+      company = await Company.findById(company._id).populate('userId', 'email');
     }
-  }
+
+    return ResponseHandler.success(res, company, 'Company profile retrieved successfully');
+  });
 
   // Update company profile
-  static async updateProfile(req, res) {
-    try {
-      const company = await Company.findOneAndUpdate(
-        { userId: req.user.id },
-        req.body,
-        { new: true, upsert: true }
-      );
+  static updateProfile = asyncHandler(async (req, res) => {
+    const company = await Company.findOneAndUpdate(
+      { userId: req.user.id },
+      req.body,
+      { new: true, upsert: true }
+    );
 
-      res.json(company);
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
-    }
-  }
+    return ResponseHandler.updated(res, company, SUCCESS_MESSAGES.PROFILE_UPDATED);
+  });
 
   // Create a new job posting
-  static async createJob(req, res) {
-    try {
-      const company = await CompanyController.ensureCompanyProfile(req.user.id);
+  static createJob = asyncHandler(async (req, res) => {
+    const company = await CompanyController.ensureCompanyProfile(req.user.id);
 
-      const job = new Job({
-        ...req.body,
-        companyId: company._id,
-        postedBy: req.user.id,
-        status: req.body.status || 'active'
-      });
+    const job = new Job({
+      ...req.body,
+      companyId: company._id,
+      postedBy: req.user.id,
+      status: req.body.status || 'active'
+    });
 
-      await job.save();
-      res.status(201).json({
-        success: true,
-        data: job
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
-    }
-  }
+    await job.save();
+    return ResponseHandler.created(res, job, 'Job created successfully');
+  });
 
   // Get company jobs
-  static async getJobs(req, res) {
-    try {
-      const company = await CompanyController.ensureCompanyProfile(req.user.id);
-      
-      const jobs = await Job.find({ companyId: company._id })
-        .sort({ createdAt: -1 });
+  static getJobs = asyncHandler(async (req, res) => {
+    const company = await CompanyController.ensureCompanyProfile(req.user.id);
+    
+    const jobs = await Job.find({ companyId: company._id })
+      .sort({ createdAt: -1 });
 
-      res.json(jobs);
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
-    }
-  }
+    return ResponseHandler.success(res, jobs, 'Jobs retrieved successfully');
+  });
 
   // Get single job
   static async getJob(req, res) {
@@ -165,30 +137,38 @@ class CompanyController {
   }
 
   // Delete job
-  static async deleteJob(req, res) {
-    try {
-      const { jobId } = req.params;
-      const company = await CompanyController.ensureCompanyProfile(req.user.id);
-      
-      const job = await Job.findOneAndDelete({ _id: jobId, companyId: company._id });
-      if (!job) {
-        return res.status(404).json({ 
-          success: false,
-          message: 'Job not found' 
-        });
-      }
-
-      res.json({
-        success: true,
-        message: 'Job deleted successfully'
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
+  static deleteJob = asyncHandler(async (req, res) => {
+    const { jobId } = req.params;
+    const company = await CompanyController.ensureCompanyProfile(req.user.id);
+    
+    const job = await Job.findOneAndDelete({ _id: jobId, companyId: company._id });
+    if (!job) {
+      return ResponseHandler.notFound(res, 'Job not found');
     }
-  }
+
+    return ResponseHandler.deleted(res, 'Job deleted successfully');
+  });
+
+  // Delete application (company can remove applications)
+  static deleteApplication = asyncHandler(async (req, res) => {
+    const { applicationId } = req.params;
+
+    const application = await Application.findById(applicationId)
+      .populate('jobId');
+
+    if (!application) {
+      return ResponseHandler.notFound(res, 'Application not found');
+    }
+
+    // Verify job belongs to company
+    const company = await Company.findOne({ userId: req.user.id });
+    if (application.jobId.companyId.toString() !== company._id.toString()) {
+      return ResponseHandler.forbidden(res, 'Unauthorized');
+    }
+
+    await Application.findByIdAndDelete(applicationId);
+    return ResponseHandler.deleted(res, 'Application deleted successfully');
+  });
 
   // Get applications for a job
   static async getJobApplications(req, res) {
@@ -325,87 +305,62 @@ class CompanyController {
   }
 
   // Delete application (company can remove applications)
-  static async deleteApplication(req, res) {
-    try {
-      const { applicationId } = req.params;
+  static deleteApplication = asyncHandler(async (req, res) => {
+    const { applicationId } = req.params;
 
-      const application = await Application.findById(applicationId)
-        .populate('jobId');
+    const application = await Application.findById(applicationId)
+      .populate('jobId');
 
-      if (!application) {
-        return res.status(404).json({ 
-          success: false,
-          message: 'Application not found' 
-        });
-      }
-
-      // Verify job belongs to company
-      const company = await Company.findOne({ userId: req.user.id });
-      if (application.jobId.companyId.toString() !== company._id.toString()) {
-        return res.status(403).json({ 
-          success: false,
-          message: 'Unauthorized' 
-        });
-      }
-
-      await Application.findByIdAndDelete(applicationId);
-
-      res.json({
-        success: true,
-        message: 'Application deleted successfully'
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
+    if (!application) {
+      return ResponseHandler.notFound(res, 'Application not found');
     }
-  }
+
+    // Verify job belongs to company
+    const company = await Company.findOne({ userId: req.user.id });
+    if (application.jobId.companyId.toString() !== company._id.toString()) {
+      return ResponseHandler.forbidden(res, 'Unauthorized');
+    }
+
+    await Application.findByIdAndDelete(applicationId);
+    return ResponseHandler.deleted(res, 'Application deleted successfully');
+  });
 
   // Get company dashboard data
-  static async getDashboardData(req, res) {
-    try {
-      const company = await CompanyController.ensureCompanyProfile(req.user.id);
-      
-      const jobs = await Job.find({ companyId: company._id });
-      const jobIds = jobs.map(job => job._id);
-      const applications = await Application.find({ jobId: { $in: jobIds } });
+  static getDashboardData = asyncHandler(async (req, res) => {
+    const company = await CompanyController.ensureCompanyProfile(req.user.id);
+    
+    const jobs = await Job.find({ companyId: company._id });
+    const jobIds = jobs.map(job => job._id);
+    const applications = await Application.find({ jobId: { $in: jobIds } });
 
-      const stats = {
-        totalJobs: jobs.length,
-        activeJobs: jobs.filter(job => job.status === 'active').length,
-        totalApplications: applications.length,
-        pendingApplications: applications.filter(app => app.status === 'applied').length,
-        interviewsScheduled: applications.filter(app => app.status === 'interview_scheduled').length,
-        offersExtended: applications.filter(app => app.status === 'offer_extended').length
-      };
+    const stats = {
+      totalJobs: jobs.length,
+      activeJobs: jobs.filter(job => job.status === 'active').length,
+      totalApplications: applications.length,
+      pendingApplications: applications.filter(app => app.status === 'applied').length,
+      interviewsScheduled: applications.filter(app => app.status === 'interview_scheduled').length,
+      offersExtended: applications.filter(app => app.status === 'offer_extended').length
+    };
 
-      const recentApplications = applications
-        .sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt))
-        .slice(0, 10);
+    const recentApplications = applications
+      .sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt))
+      .slice(0, 10);
 
-      const jobStats = jobs.map(job => ({
-        jobTitle: job.jobDetails?.title,
-        applications: applications.filter(app => app.jobId.toString() === job._id.toString()).length,
-        status: job.status
-      }));
+    const jobStats = jobs.map(job => ({
+      jobTitle: job.jobDetails?.title,
+      applications: applications.filter(app => app.jobId.toString() === job._id.toString()).length,
+      status: job.status
+    }));
 
-      res.json({
-        success: true,
-        data: {
-          stats,
-          recentApplications,
-          jobStats,
-          company
-        }
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
-    }
-  }
+    const dashboardData = {
+      stats,
+      recentApplications,
+      jobStats,
+      company
+    };
+
+    return ResponseHandler.success(res, dashboardData, 'Dashboard data retrieved successfully');
+  });
 }
 
 module.exports = CompanyController;

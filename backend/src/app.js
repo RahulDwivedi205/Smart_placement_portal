@@ -24,7 +24,7 @@ app.use('/api/applications', require('./routes/applicationRoutes'));
 app.get('/api/health', (req, res) => {
   res.json({ 
     success: true, 
-    message: 'PlaceWise API is running',
+    message: 'SmartPlacement Portal API is running',
     timestamp: new Date().toISOString()
   });
 });

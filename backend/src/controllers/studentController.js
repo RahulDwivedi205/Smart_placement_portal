@@ -4,6 +4,9 @@ const Application = require('../models/Application');
 const EligibilityService = require('../services/eligibilityService');
 const MatchingService = require('../services/matchingService');
 const PRSService = require('../services/prsService');
+const ResponseHandler = require('../utils/responseHandler');
+const asyncHandler = require('../utils/asyncHandler');
+const { SUCCESS_MESSAGES, ERROR_MESSAGES } = require('../config/constants');
 
 class StudentController {
   // Helper function to ensure student profile exists
@@ -48,231 +51,148 @@ class StudentController {
   }
 
   // Get student profile
-  static async getProfile(req, res) {
-    try {
-      const profile = await StudentProfile.findOne({ userId: req.user.id })
-        .populate('userId', 'email');
-      
-      if (!profile) {
-        return res.status(404).json({ 
-          success: false,
-          message: 'Profile not found' 
-        });
-      }
-
-      res.json({
-        success: true,
-        data: profile
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
+  static getProfile = asyncHandler(async (req, res) => {
+    const profile = await StudentProfile.findOne({ userId: req.user.id })
+      .populate('userId', 'email');
+    
+    if (!profile) {
+      return ResponseHandler.notFound(res, 'Profile not found');
     }
-  }
+
+    return ResponseHandler.success(res, profile, 'Profile retrieved successfully');
+  });
 
   // Update student profile
-  static async updateProfile(req, res) {
-    try {
-      // Check if roll number is being updated and if it already exists
-      if (req.body.personalInfo?.rollNumber) {
-        const existingProfile = await StudentProfile.findOne({
-          'personalInfo.rollNumber': req.body.personalInfo.rollNumber,
-          userId: { $ne: req.user.id }
-        });
-        
-        if (existingProfile) {
-          return res.status(400).json({
-            success: false,
-            message: 'Roll number already exists. Please use a different roll number.'
-          });
-        }
-      }
-
-      const profile = await StudentProfile.findOneAndUpdate(
-        { userId: req.user.id },
-        req.body,
-        { new: true, upsert: true }
-      );
-
-      // Recalculate PRS after profile update
-      const prsResult = await PRSService.calculatePRS(req.user.id);
-      
-      // Update the profile with the new PRS score
-      await StudentProfile.findOneAndUpdate(
-        { userId: req.user.id },
-        { placementReadinessScore: prsResult.score }
-      );
-
-      res.json({
-        success: true,
-        data: profile
+  static updateProfile = asyncHandler(async (req, res) => {
+    // Check if roll number is being updated and if it already exists
+    if (req.body.personalInfo?.rollNumber) {
+      const existingProfile = await StudentProfile.findOne({
+        'personalInfo.rollNumber': req.body.personalInfo.rollNumber,
+        userId: { $ne: req.user.id }
       });
-    } catch (error) {
-      if (error.code === 11000 && error.keyPattern?.['personalInfo.rollNumber']) {
-        res.status(400).json({
-          success: false,
-          message: 'Roll number already exists. Please use a different roll number.'
-        });
-      } else {
-        res.status(500).json({ 
-          success: false,
-          message: error.message 
-        });
+      
+      if (existingProfile) {
+        return ResponseHandler.conflict(res, 'Roll number already exists. Please use a different roll number.');
       }
     }
-  }
+
+    const profile = await StudentProfile.findOneAndUpdate(
+      { userId: req.user.id },
+      req.body,
+      { new: true, upsert: true }
+    );
+
+    // Recalculate PRS after profile update
+    const prsResult = await PRSService.calculatePRS(req.user.id);
+    
+    // Update the profile with the new PRS score
+    await StudentProfile.findOneAndUpdate(
+      { userId: req.user.id },
+      { placementReadinessScore: prsResult.score }
+    );
+
+    return ResponseHandler.updated(res, profile, SUCCESS_MESSAGES.PROFILE_UPDATED);
+  });
 
   // Get eligible jobs for student
-  static async getEligibleJobs(req, res) {
-    try {
-      await StudentController.ensureStudentProfile(req.user.id);
-      const jobs = await EligibilityService.getEligibleJobs(req.user.id);
-      res.json({
-        success: true,
-        data: jobs
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
-    }
-  }
+  static getEligibleJobs = asyncHandler(async (req, res) => {
+    await StudentController.ensureStudentProfile(req.user.id);
+    const jobs = await EligibilityService.getEligibleJobs(req.user.id);
+    return ResponseHandler.success(res, jobs, 'Eligible jobs retrieved successfully');
+  });
 
   // Apply for a job
-  static async applyForJob(req, res) {
-    try {
-      const { jobId } = req.params;
-      const { coverLetter } = req.body;
+  static applyForJob = asyncHandler(async (req, res) => {
+    const { jobId } = req.params;
+    const { coverLetter } = req.body;
 
-      // Check if already applied
-      const existingApplication = await Application.findOne({
-        studentId: req.user.id,
-        jobId
-      });
+    // Check if already applied
+    const existingApplication = await Application.findOne({
+      studentId: req.user.id,
+      jobId
+    });
 
-      if (existingApplication) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Already applied for this job' 
-        });
-      }
-
-      // Check eligibility
-      const job = await Job.findById(jobId);
-      const student = await StudentProfile.findOne({ userId: req.user.id });
-      
-      if (!EligibilityService.isEligible(student, job)) {
-        return res.status(400).json({ 
-          success: false,
-          message: 'Not eligible for this job' 
-        });
-      }
-
-      // Calculate matching score
-      const matchingResult = await MatchingService.calculateMatchingScore(student, job);
-      const matchingScore = matchingResult.overallScore;
-
-      const application = new Application({
-        studentId: req.user.id,
-        jobId,
-        companyId: job.companyId,
-        applicationData: {
-          coverLetter
-        },
-        overallScore: matchingScore,
-        status: 'applied',
-        appliedAt: new Date()
-      });
-
-      await application.save();
-      res.status(201).json({
-        success: true,
-        data: application
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
+    if (existingApplication) {
+      return ResponseHandler.conflict(res, 'Already applied for this job');
     }
-  }
+
+    // Check eligibility
+    const job = await Job.findById(jobId);
+    const student = await StudentProfile.findOne({ userId: req.user.id });
+    
+    if (!EligibilityService.isEligible(student, job)) {
+      return ResponseHandler.forbidden(res, 'Not eligible for this job');
+    }
+
+    // Calculate matching score
+    const matchingResult = await MatchingService.calculateMatchingScore(student, job);
+    const matchingScore = matchingResult.overallScore;
+
+    const application = new Application({
+      studentId: req.user.id,
+      jobId,
+      companyId: job.companyId,
+      applicationData: {
+        coverLetter
+      },
+      overallScore: matchingScore,
+      status: 'applied',
+      appliedAt: new Date()
+    });
+
+    await application.save();
+    return ResponseHandler.created(res, application, 'Application submitted successfully');
+  });
 
   // Get student applications
-  static async getApplications(req, res) {
-    try {
-      const applications = await Application.find({ studentId: req.user.id })
-        .populate('jobId')
-        .sort({ appliedAt: -1 });
+  static getApplications = asyncHandler(async (req, res) => {
+    const applications = await Application.find({ studentId: req.user.id })
+      .populate('jobId')
+      .sort({ appliedAt: -1 });
 
-      res.json({
-        success: true,
-        data: applications
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
-    }
-  }
+    return ResponseHandler.success(res, applications, 'Applications retrieved successfully');
+  });
 
   // Get student dashboard data
-  static async getDashboardData(req, res) {
-    try {
-      const student = await StudentController.ensureStudentProfile(req.user.id);
-      const applications = await Application.find({ studentId: req.user.id });
-      const eligibleJobs = await EligibilityService.getEligibleJobs(req.user.id);
+  static getDashboardData = asyncHandler(async (req, res) => {
+    const student = await StudentController.ensureStudentProfile(req.user.id);
+    const applications = await Application.find({ studentId: req.user.id });
+    const eligibleJobs = await EligibilityService.getEligibleJobs(req.user.id);
 
-      const stats = {
-        totalApplications: applications.length,
-        pendingApplications: applications.filter(app => app.status === 'applied').length,
-        interviewsScheduled: applications.filter(app => app.status === 'interview_scheduled').length,
-        offersReceived: applications.filter(app => app.status === 'offer_received').length,
-        eligibleJobs: eligibleJobs.length,
-        placementReadinessScore: student?.placementReadinessScore || 0
-      };
+    const stats = {
+      totalApplications: applications.length,
+      pendingApplications: applications.filter(app => app.status === 'applied').length,
+      interviewsScheduled: applications.filter(app => app.status === 'interview_scheduled').length,
+      offersReceived: applications.filter(app => app.status === 'offer_received').length,
+      eligibleJobs: eligibleJobs.length,
+      placementReadinessScore: student?.placementReadinessScore || 0
+    };
 
-      const recentApplications = applications
-        .sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt))
-        .slice(0, 5);
+    const recentApplications = applications
+      .sort((a, b) => new Date(b.appliedAt) - new Date(a.appliedAt))
+      .slice(0, 5);
 
-      res.json({
-        success: true,
-        data: {
-          stats,
-          recentApplications,
-          profile: student
-        }
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
-    }
-  }
+    const dashboardData = {
+      stats,
+      recentApplications,
+      profile: student
+    };
+
+    return ResponseHandler.success(res, dashboardData, 'Dashboard data retrieved successfully');
+  });
 
   // Get placement readiness score
-  static async getPRS(req, res) {
-    try {
-      const result = await PRSService.calculatePRS(req.user.id);
-      const breakdown = await PRSService.getPRSBreakdown(req.user.id);
-      
-      res.json({ 
-        success: true,
-        score: result.score, 
-        breakdown: result.breakdown || breakdown 
-      });
-    } catch (error) {
-      res.status(500).json({ 
-        success: false,
-        message: error.message 
-      });
-    }
-  }
+  static getPRS = asyncHandler(async (req, res) => {
+    const result = await PRSService.calculatePRS(req.user.id);
+    const breakdown = await PRSService.getPRSBreakdown(req.user.id);
+    
+    const prsData = { 
+      score: result.score, 
+      breakdown: result.breakdown || breakdown 
+    };
+
+    return ResponseHandler.success(res, prsData, 'PRS calculated successfully');
+  });
 }
 
 module.exports = StudentController;

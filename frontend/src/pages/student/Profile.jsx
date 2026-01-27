@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import BackButton from '../../components/common/BackButton';
 import { 
   UserIcon, 
   AcademicCapIcon, 
@@ -259,6 +260,8 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 p-6">
       <div className="space-y-6">
+        <BackButton to="/student" className="text-white hover:text-blue-200 hover:bg-white hover:bg-opacity-10" />
+        
         <div className="glass-card p-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">

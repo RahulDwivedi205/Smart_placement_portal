@@ -20,7 +20,7 @@ const Navbar = () => {
                 </svg>
               </div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                PlaceWise
+                SmartPlacement Portal
               </h1>
             </div>
           </div>
