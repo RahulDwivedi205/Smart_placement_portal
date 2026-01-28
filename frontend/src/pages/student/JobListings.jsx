@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import BackButton from '../../components/common/BackButton';
+import { useGamification } from '../../context/GamificationContext';
+import { useNotification } from '../../context/NotificationContext';
 import { 
   MagnifyingGlassIcon,
   MapPinIcon,
@@ -17,6 +19,8 @@ const JobListings = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [applying, setApplying] = useState({});
+  const { awardXpToUser, updateUserStats } = useGamification();
+  const { showNotification } = useNotification();
   const [filters, setFilters] = useState({
     search: '',
     branch: '',
@@ -74,13 +78,33 @@ const JobListings = () => {
       });
       
       if (response.data.success) {
-        alert('Application submitted successfully!');
+        // Award XP for application
+        const isFirstApplication = jobs.filter(job => job.hasApplied).length === 0;
+        
+        if (isFirstApplication) {
+          awardXpToUser('first_application');
+          showNotification('🚀 First Application Badge Earned! +25 XP', 'success');
+        } else {
+          awardXpToUser('application_submitted');
+        }
+        
+        // Check for quick applier badge (5 applications in one day)
+        const today = new Date().toDateString();
+        const todayApplications = parseInt(localStorage.getItem(`applications_${today}`) || '0') + 1;
+        localStorage.setItem(`applications_${today}`, todayApplications.toString());
+        
+        if (todayApplications === 5) {
+          awardXpToUser('quick_applier', 35);
+          showNotification('💨 Speed Demon Badge Earned! +35 XP', 'success');
+        }
+        
+        showNotification('Application submitted successfully! 🎯', 'success');
         fetchJobs(); // Refresh to update application status
       } else {
-        alert(response.data.message || 'Failed to apply');
+        showNotification(response.data.message || 'Failed to apply', 'error');
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to apply');
+      showNotification(err.response?.data?.message || 'Failed to apply', 'error');
     } finally {
       setApplying(prev => ({ ...prev, [jobId]: false }));
     }

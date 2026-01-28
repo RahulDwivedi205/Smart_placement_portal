@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { GamificationProvider } from './context/GamificationContext';
 import { useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
@@ -189,7 +190,9 @@ function App() {
     <ErrorBoundary>
       <NotificationProvider>
         <AuthProvider>
-          <AppRoutes />
+          <GamificationProvider>
+            <AppRoutes />
+          </GamificationProvider>
         </AuthProvider>
       </NotificationProvider>
     </ErrorBoundary>

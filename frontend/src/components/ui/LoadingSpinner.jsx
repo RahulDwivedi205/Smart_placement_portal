@@ -17,7 +17,7 @@ const LoadingSpinner = ({
     <div className={cn('flex flex-col items-center justify-center', className)}>
       <svg
         className={cn(
-          'animate-spin text-blue-600',
+          'animate-spin text-purple-600',
           sizes[size]
         )}
         fill="none"

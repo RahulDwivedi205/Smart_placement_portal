@@ -181,3 +181,41 @@ export const THEME = {
   ERROR: 'red',
   INFO: 'blue'
 };
+
+// Gamification System
+export const GAMIFICATION = {
+  LEVELS: {
+    1: { name: 'Placement Rookie', xpRequired: 0, color: 'gray' },
+    2: { name: 'Skill Builder', xpRequired: 100, color: 'blue' },
+    3: { name: 'Interview Warrior', xpRequired: 300, color: 'green' },
+    4: { name: 'Career Champion', xpRequired: 600, color: 'purple' },
+    5: { name: 'Placement Master', xpRequired: 1000, color: 'gold' },
+    6: { name: 'Industry Legend', xpRequired: 1500, color: 'red' }
+  },
+  
+  BADGES: {
+    PROFILE_COMPLETE: { name: 'Profile Master', icon: '👤', xp: 50, description: 'Complete your profile 100%' },
+    FIRST_APPLICATION: { name: 'First Step', icon: '🚀', xp: 25, description: 'Submit your first job application' },
+    INTERVIEW_ACE: { name: 'Interview Ace', icon: '🎯', xp: 75, description: 'Get selected for an interview' },
+    SKILL_COLLECTOR: { name: 'Skill Collector', icon: '⚡', xp: 30, description: 'Add 10+ skills to your profile' },
+    NETWORKING_PRO: { name: 'Networking Pro', icon: '🤝', xp: 40, description: 'Connect with 5+ companies' },
+    QUICK_APPLIER: { name: 'Speed Demon', icon: '💨', xp: 35, description: 'Apply to 5 jobs in one day' },
+    PERSISTENT: { name: 'Never Give Up', icon: '💪', xp: 60, description: 'Apply to 20+ jobs' },
+    OFFER_RECEIVER: { name: 'Offer Magnet', icon: '🎁', xp: 100, description: 'Receive your first job offer' },
+    PLACEMENT_HERO: { name: 'Placement Hero', icon: '🏆', xp: 200, description: 'Successfully get placed!' }
+  },
+  
+  ACHIEVEMENTS: {
+    DAILY_LOGIN: { name: 'Daily Warrior', icon: '📅', xp: 5, description: 'Login daily for 7 days' },
+    PROFILE_VIEWS: { name: 'Popular Profile', icon: '👀', xp: 20, description: 'Get 50+ profile views' },
+    COMPANY_FAVORITE: { name: 'Company Favorite', icon: '⭐', xp: 45, description: 'Get shortlisted by 3+ companies' },
+    SKILL_MASTER: { name: 'Skill Master', icon: '🧠', xp: 80, description: 'Master 5+ technical skills' }
+  },
+  
+  QUESTS: {
+    WEEKLY_APPLICATIONS: { name: 'Weekly Hustle', target: 3, reward: 25, icon: '📝' },
+    PROFILE_OPTIMIZATION: { name: 'Profile Polish', target: 100, reward: 50, icon: '✨' },
+    SKILL_BUILDING: { name: 'Skill Sprint', target: 5, reward: 30, icon: '🎓' },
+    NETWORKING_CHALLENGE: { name: 'Network Ninja', target: 10, reward: 40, icon: '🌐' }
+  }
+};

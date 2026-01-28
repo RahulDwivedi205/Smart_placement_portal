@@ -302,16 +302,105 @@ export const getStatusColor = (status) => {
   return statusColors[status] || 'gray';
 };
 
-// Random utilities
-export const generateId = () => {
-  return Math.random().toString(36).substr(2, 9);
+// Gamification utilities
+export const calculateLevel = (xp) => {
+  const levels = [
+    { level: 1, xpRequired: 0 },
+    { level: 2, xpRequired: 100 },
+    { level: 3, xpRequired: 300 },
+    { level: 4, xpRequired: 600 },
+    { level: 5, xpRequired: 1000 },
+    { level: 6, xpRequired: 1500 }
+  ];
+  
+  for (let i = levels.length - 1; i >= 0; i--) {
+    if (xp >= levels[i].xpRequired) {
+      return levels[i].level;
+    }
+  }
+  return 1;
 };
 
-export const generatePassword = (length = 12) => {
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = '';
-  for (let i = 0; i < length; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
+export const getXpForNextLevel = (currentXp) => {
+  const levels = [100, 300, 600, 1000, 1500, 2000];
+  const currentLevel = calculateLevel(currentXp);
+  
+  if (currentLevel >= 6) return 0; // Max level reached
+  
+  return levels[currentLevel - 1] - currentXp;
+};
+
+export const calculateProgress = (currentXp) => {
+  const currentLevel = calculateLevel(currentXp);
+  const levels = [0, 100, 300, 600, 1000, 1500];
+  
+  if (currentLevel >= 6) return 100;
+  
+  const currentLevelXp = levels[currentLevel - 1];
+  const nextLevelXp = levels[currentLevel];
+  const progressXp = currentXp - currentLevelXp;
+  const totalXpNeeded = nextLevelXp - currentLevelXp;
+  
+  return Math.round((progressXp / totalXpNeeded) * 100);
+};
+
+export const awardXp = (action) => {
+  const xpRewards = {
+    'profile_complete': 50,
+    'first_application': 25,
+    'interview_scheduled': 75,
+    'skill_added': 10,
+    'application_submitted': 15,
+    'daily_login': 5,
+    'offer_received': 100,
+    'placement_success': 200
+  };
+  
+  return xpRewards[action] || 0;
+};
+
+export const checkBadgeEligibility = (userStats) => {
+  const earnedBadges = [];
+  
+  // Profile Complete Badge
+  if (userStats.profileCompletion >= 100) {
+    earnedBadges.push('PROFILE_COMPLETE');
   }
-  return password;
+  
+  // First Application Badge
+  if (userStats.totalApplications >= 1) {
+    earnedBadges.push('FIRST_APPLICATION');
+  }
+  
+  // Skill Collector Badge
+  if (userStats.totalSkills >= 10) {
+    earnedBadges.push('SKILL_COLLECTOR');
+  }
+  
+  // Quick Applier Badge
+  if (userStats.applicationsToday >= 5) {
+    earnedBadges.push('QUICK_APPLIER');
+  }
+  
+  // Persistent Badge
+  if (userStats.totalApplications >= 20) {
+    earnedBadges.push('PERSISTENT');
+  }
+  
+  // Interview Ace Badge
+  if (userStats.interviewsScheduled >= 1) {
+    earnedBadges.push('INTERVIEW_ACE');
+  }
+  
+  // Offer Receiver Badge
+  if (userStats.offersReceived >= 1) {
+    earnedBadges.push('OFFER_RECEIVER');
+  }
+  
+  // Placement Hero Badge
+  if (userStats.isPlaced) {
+    earnedBadges.push('PLACEMENT_HERO');
+  }
+  
+  return earnedBadges;
 };

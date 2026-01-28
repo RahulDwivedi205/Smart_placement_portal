@@ -14,13 +14,14 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl flex items-center justify-center mr-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-indigo-700 rounded-xl flex items-center justify-center mr-3">
                 <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                  <circle cx="12" cy="12" r="2" fill="currentColor"/>
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                SmartPlacement Portal
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-800 bg-clip-text text-transparent">
+                CampusConnect Pro
               </h1>
             </div>
           </div>
@@ -28,7 +29,7 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             {user && (
               <>
-                <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors">
+                <button className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-colors">
                   <BellIcon className="w-6 h-6" />
                 </button>
                 
@@ -41,8 +42,8 @@ const Navbar = () => {
                   </div>
                   
                   <div className="relative group">
-                    <button className="flex items-center space-x-2 p-2 rounded-xl hover:bg-blue-50 transition-colors">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                    <button className="flex items-center space-x-2 p-2 rounded-xl hover:bg-purple-50 transition-colors">
+                      <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
                         <UserCircleIcon className="w-5 h-5 text-white" />
                       </div>
                     </button>
