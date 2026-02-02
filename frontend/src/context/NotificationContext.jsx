@@ -104,6 +104,11 @@ export const NotificationProvider = ({ children }) => {
     return addNotification({ ...options, message, type: 'info' });
   }, [addNotification]);
 
+  // Convenience method for backward compatibility
+  const showNotification = useCallback((message, type = 'info', options = {}) => {
+    return addNotification({ ...options, message, type });
+  }, [addNotification]);
+
   const value = {
     notifications,
     addNotification,
@@ -112,7 +117,8 @@ export const NotificationProvider = ({ children }) => {
     success,
     error,
     warning,
-    info
+    info,
+    showNotification
   };
 
   return (

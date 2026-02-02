@@ -127,6 +127,7 @@ const Login = () => {
                   onChange={handleChange}
                   error={errors.password}
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   className="bg-white bg-opacity-20 border-white border-opacity-30 text-white placeholder-white placeholder-opacity-70 focus:ring-white focus:ring-opacity-50"
                 />
               </div>

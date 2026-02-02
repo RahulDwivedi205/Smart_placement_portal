@@ -13,12 +13,19 @@ const corsOptions = {
     const allowedOrigins = [
       'http://localhost:3001',
       'http://localhost:3000',
+      'https://localhost:3001',
+      'https://localhost:3000',
       process.env.CLIENT_URL,
       process.env.CORS_ORIGIN
     ].filter(Boolean);
     
-    // Allow all Vercel deployments for testing
-    if (origin && (origin.includes('vercel.app') || allowedOrigins.includes(origin))) {
+    // Allow all Vercel deployments
+    if (origin && origin.includes('vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Allow specific origins
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     
@@ -27,11 +34,12 @@ const corsOptions = {
       return callback(null, true);
     }
     
+    console.log('CORS blocked origin:', origin);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
 app.use(cors(corsOptions));
@@ -94,12 +102,25 @@ app.use('*', (req, res) => {
 
 // Error handler
 app.use((error, req, res, next) => {
-  console.error('Error:', error);
+  console.error('Error Details:', {
+    message: error.message,
+    stack: error.stack,
+    url: req.url,
+    method: req.method,
+    body: req.body,
+    headers: req.headers
+  });
   
   res.status(error.status || 500).json({
     success: false,
     message: error.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+    ...(process.env.NODE_ENV === 'development' && { 
+      stack: error.stack,
+      details: {
+        url: req.url,
+        method: req.method
+      }
+    })
   });
 });
 
