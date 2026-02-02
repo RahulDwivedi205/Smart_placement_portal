@@ -4,14 +4,14 @@ const path = require('path');
 
 const app = express();
 
-// Database connection middleware for serverless
+// Ensure database connection for each request in serverless
 app.use(async (req, res, next) => {
   try {
     const connectDB = require('./config/db');
     await connectDB();
     next();
   } catch (error) {
-    console.error('Database connection failed:', error);
+    console.error('❌ Database middleware error:', error.message);
     return res.status(500).json({
       success: false,
       message: 'Database connection failed',
