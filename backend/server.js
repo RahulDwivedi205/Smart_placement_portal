@@ -9,24 +9,12 @@ dotenv.config();
 // Initialize app first
 const app = require('./src/app');
 
-// Connect to database with error handling
-let isConnected = false;
-
-const initializeDatabase = async () => {
-  if (!isConnected) {
-    try {
-      await connectDB();
-      isConnected = true;
-      console.log('🚀 Database initialized successfully');
-    } catch (error) {
-      console.error('❌ Database initialization failed:', error.message);
-      // Don't exit in serverless environment, let requests handle the error
-    }
-  }
-};
-
-// Initialize database connection
-initializeDatabase();
+// For serverless environments, don't initialize DB here
+// Let each request handle its own connection
+if (process.env.NODE_ENV !== 'production') {
+  // Only connect in development
+  connectDB().catch(console.error);
+}
 
 const PORT = process.env.PORT || 5001;
 
@@ -44,7 +32,7 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`🚀 CampusConnect Pro Backend running on port ${PORT}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-    console.log(`🔗 Database: ${process.env.MONGODB_URI ? 'Connected' : 'Not configured'}`);
+    console.log(`🔗 Database: ${process.env.MONGODB_URI ? 'Configured' : 'Not configured'}`);
   });
 }
 

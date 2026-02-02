@@ -4,6 +4,22 @@ const path = require('path');
 
 const app = express();
 
+// Database connection middleware for serverless
+app.use(async (req, res, next) => {
+  try {
+    const connectDB = require('./config/db');
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Database connection failed',
+      error: error.message
+    });
+  }
+});
+
 // CORS configuration for Vercel deployment
 const corsOptions = {
   origin: function (origin, callback) {
@@ -124,7 +140,8 @@ app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'CampusConnect Pro Backend API',
-    version: '1.0.0',
+    version: '1.0.1', // Updated version to trigger deployment
+    timestamp: new Date().toISOString(),
     endpoints: {
       health: '/health',
       auth: '/auth',
