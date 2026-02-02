@@ -9,11 +9,11 @@ const getApiBaseUrl = () => {
   
   // Development fallback
   if (import.meta.env.DEV) {
-    return 'http://localhost:5001/api';
+    return 'http://localhost:5001';
   }
   
   // Production fallback - will be replaced during deployment
-  return 'https://your-backend-domain.vercel.app/api';
+  return 'https://your-backend-domain.vercel.app';
 };
 
 const API_BASE_URL = getApiBaseUrl();
