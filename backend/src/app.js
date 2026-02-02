@@ -17,8 +17,13 @@ const corsOptions = {
       process.env.CORS_ORIGIN
     ].filter(Boolean);
     
-    // Allow Vercel preview deployments
-    if (origin.includes('vercel.app') || allowedOrigins.includes(origin)) {
+    // Allow all Vercel deployments for testing
+    if (origin && (origin.includes('vercel.app') || allowedOrigins.includes(origin))) {
+      return callback(null, true);
+    }
+    
+    // For development, allow all origins
+    if (process.env.NODE_ENV === 'development') {
       return callback(null, true);
     }
     
@@ -33,6 +38,14 @@ app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Debug middleware for production
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+  });
+}
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -51,6 +64,25 @@ app.get('/api/health', (req, res) => {
     message: 'CampusConnect Pro API is running',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV
+  });
+});
+
+// API root endpoint
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'CampusConnect Pro API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      student: '/api/student',
+      company: '/api/company',
+      admin: '/api/admin',
+      jobs: '/api/jobs',
+      applications: '/api/applications'
+    }
   });
 });
 
