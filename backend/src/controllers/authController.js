@@ -6,7 +6,7 @@ const Company = require('../models/Company');
 
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE
+    expiresIn: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d'
   });
 };
 
@@ -60,8 +60,11 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
+    console.log('Login attempt:', { email: req.body.email, hasPassword: !!req.body.password });
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -73,14 +76,18 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('User not found:', email);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
 
+    console.log('User found:', { id: user._id, email: user.email, role: user.role });
+
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
+      console.log('Invalid password for user:', email);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -88,6 +95,7 @@ const login = async (req, res) => {
     }
 
     if (!user.isActive) {
+      console.log('User account deactivated:', email);
       return res.status(401).json({
         success: false,
         message: 'Account is deactivated'
@@ -98,6 +106,7 @@ const login = async (req, res) => {
     await user.save();
 
     const token = generateToken(user._id);
+    console.log('Login successful for user:', email);
 
     res.json({
       success: true,
@@ -113,7 +122,11 @@ const login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Login error details:', {
+      message: error.message,
+      stack: error.stack,
+      body: req.body
+    });
     res.status(500).json({
       success: false,
       message: 'Login failed',

@@ -75,6 +75,50 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Test endpoint to create a test user
+app.post('/create-test-user', async (req, res) => {
+  try {
+    const User = require('./models/User');
+    
+    // Check if test user already exists
+    const existingUser = await User.findOne({ email: 'test@test.com' });
+    if (existingUser) {
+      return res.json({
+        success: true,
+        message: 'Test user already exists',
+        user: {
+          email: existingUser.email,
+          role: existingUser.role
+        }
+      });
+    }
+
+    // Create test user
+    const testUser = new User({
+      email: 'test@test.com',
+      password: '12345678',
+      role: 'student'
+    });
+
+    await testUser.save();
+
+    res.json({
+      success: true,
+      message: 'Test user created successfully',
+      user: {
+        email: testUser.email,
+        role: testUser.role
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create test user',
+      error: error.message
+    });
+  }
+});
+
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
